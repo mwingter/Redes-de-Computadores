@@ -1,7 +1,7 @@
 # Redes de Computadores
 Trabalho realizado para a disciplina SSC0142 - Redes de Computadores (2020)
 
-##Introdução
+## Introdução
   Ao longo deste projeto serão implementadas as diversas partes que compõe um cliente e servidor
 IRC, ou Internet Relay Chat, amplamente utilizado na década de 90 e até hoje por alguns grupos de
 computação.
