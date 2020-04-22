@@ -21,20 +21,20 @@ o usuário da aplicação 1 e vice-versa.
 O limite para o tamanho de cada mensagem deve ser de 4096 caracteres. Caso um usuário envie
 uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens automaticamente.
 
-### COMO USAR
+## COMO USAR
 
-* Para compilar o programa:
+* Para compilar o programa, digite:
 
 	make all
 
-* Para criar o servidor (neste caso, sera criado o servidor que estara ouvindo na porta 6666):
+* Para criar o servidor (neste caso, sera criado o servidor que estara ouvindo na porta 6666), digite:
 
 	make server
 
 	* Ou, para escolher a porta, digite: 
 		./server <numero_da_porta>
 
-* Para criar o cliente (cada um em um terminal diferente - se conectara na porta 6666):
+* Para criar o cliente (cada um em um terminal diferente - se conectara na porta 6666), digite:
 
 	make client
 
@@ -43,7 +43,7 @@ uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens 
 
 
 
-### OUTPUT
+## OUTPUT
 
 * No terminal do Servidor:
 
