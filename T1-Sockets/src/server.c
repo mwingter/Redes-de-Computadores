@@ -114,12 +114,12 @@ void *handle_client(void *arg){
 
 	//name
 	if(recv(cli->sockfd, name, NAME_LEN, 0) <= 0 || strlen(name) < 2 || strlen(name) >= NAME_LEN - 1){
-		printf("Enter the name correctly\n");
+		printf("Digite seu nome corretamente.\n");
 		leave_flag = 1;
 	}
 	else{
 		strcpy(cli->name, name);
-		sprintf(buffer, "%s has joined\n", cli->name);
+		sprintf(buffer, "%s entrou no chat.\n", cli->name);
 		printf("%s", buffer);
 		send_message(buffer, cli->uid);
 	}
@@ -142,7 +142,7 @@ void *handle_client(void *arg){
 			}
 		}
 		else if(receive == 0 || strcmp(buffer, "exit") == 0){
-			sprintf(buffer, "%s has left\n", cli->name);
+			sprintf(buffer, "%s saiu do chat.\n", cli->name);
 			printf("%s", buffer);
 			send_message(buffer, cli->uid);
 			leave_flag = 1;
@@ -168,7 +168,7 @@ void *handle_client(void *arg){
 int main(int argc, char const *argv[])
 {
 	if(argc != 2){
-		printf("Usage: %s <port>\n", argv[0]);
+		printf("Como usar: %s <numero-da-porta>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -207,7 +207,7 @@ int main(int argc, char const *argv[])
 		return EXIT_FAILURE;
 	}
 
-	printf("=== WELCOME TO THE CHATROOM ===\n");
+	printf("=== NOVO CHAT [PORTA %s] CRIADO ===\n", argv[1]);
 
 	while(1){
 		socklen_t clilen = sizeof(cli_addr);
@@ -215,7 +215,7 @@ int main(int argc, char const *argv[])
 		
 		//check for MAX-CLIENTS
 		if((cli_count + 1) == MAX_CLIENTS){
-			printf("Maximum Clients connected. Connection Rejected? ");
+			printf("Maximo de clientes conectados. Coneccao Rejeitada. ");
 			print_ip_addr(cli_addr);
 			close(connfd);
 			continue;

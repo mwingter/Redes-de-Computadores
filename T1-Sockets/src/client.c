@@ -116,7 +116,7 @@ void send_msg_handler(){
 int main(int argc, char const *argv[])
 {
 	if(argc != 2){
-		printf("Usage: %s <port>\n", argv[0]);
+		printf("Como usar: %s <numero-da-porta>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -125,12 +125,12 @@ int main(int argc, char const *argv[])
 
 	signal(SIGINT, catch_ctrl_c_and_exit);
 
-	printf("Enter your name: ");
+	printf("Digite seu nome: ");
 	fgets(name, NAME_LEN, stdin);
 	str_trim_lf(name, strlen(name));
 
 	if(strlen(name) > NAME_LEN - 1 || strlen(name) < 2){
-		printf("Enter name correctly\n");
+		printf("Digite seu nome corretamente.\n");
 		return EXIT_FAILURE;
 	}
 
@@ -152,7 +152,7 @@ int main(int argc, char const *argv[])
 	//send the name
 	send(sockfd, name, NAME_LEN, 0);
 
-	printf("=== WELCOME TO THE CHATROOM ===\n");
+	printf("=== OLA, %s. BEM-VINDO AO CHAT [PORTA %s] ===\n", name, argv[1]);
 
 	pthread_t send_msg_thread;
 	if(pthread_create(&send_msg_thread, NULL, (void*)send_msg_handler, NULL) != 0){
@@ -168,7 +168,7 @@ int main(int argc, char const *argv[])
 
 	while(1){
 		if(flag){
-			printf("\nBye\n");
+			printf("\nVolte sempre!\n");
 			break;
 		}
 	}
