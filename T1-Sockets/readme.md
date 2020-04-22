@@ -1,3 +1,6 @@
+Nome: Michelle Wingter da Silva
+nUSP: 10783243
+
 # Módulo 1 - Implementação de Sockets (entrega 26/04/2020)
 
 ## Especificação da implementação
@@ -40,7 +43,7 @@ uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens 
 
 
 
-### Outputs
+### OUTPUT
 
 * No terminal do Servidor:
 
@@ -57,4 +60,3 @@ uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens 
 < conversa do chat aparecerá aqui > "
 
 	
-
