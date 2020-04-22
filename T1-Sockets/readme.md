@@ -56,9 +56,10 @@ uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens 
 
 " Digite seu nome: <digite aqui seu nome>
 
-=== OLA, <nome>. BEM-VINDO AO CHAT [PORTA <numero_da_porta>] ===s
+=== OLA, <nome>. BEM-VINDO AO CHAT [PORTA <numero_da_porta>] ===
 
 < digite aqui suas mensagens a serem enviadas no char >
+
 < conversa do chat aparecerá aqui > "
 
 	
