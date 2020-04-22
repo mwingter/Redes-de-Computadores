@@ -21,25 +21,33 @@ o usuário da aplicação 1 e vice-versa.
 O limite para o tamanho de cada mensagem deve ser de 4096 caracteres. Caso um usuário envie
 uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens automaticamente.
 
+
+## FUNCIONALIDADES
+
+Nesta aplicação é possivel criar um servidor em uma porta escolhida pelo usuario, e conectar multiplos clientes na porta aberta.
+	
+
 ## COMO USAR
 
 * Para compilar o programa, digite:
 
 	make all
 
-* Para criar o servidor (neste caso, sera criado o servidor que estara ouvindo na porta 6666), digite:
+* Para criar o servidor (neste caso, sera criado o servidor que estara ouvindo na porta 1234), digite:
 
 	make server
 
 	* Ou, para escolher a porta, digite: 
-		./server <numero_da_porta>
+		./bin/server <numero_da_porta>
 
-* Para criar o cliente (cada um em um terminal diferente - se conectara na porta 6666), digite:
+* Para criar o cliente (cada um em um terminal diferente - se conectara na porta 1234), digite:
 
 	make client
 
 	* Ou, para se conectar em uma porta diferente, digite:
-		./client <numero_da_porta>
+		./bin/client <numero_da_porta>
+
+	Em seguida, digite seu nome, envie, e estara pronto para conversar no chat.
 
 
 
