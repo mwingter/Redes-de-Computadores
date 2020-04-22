@@ -1,4 +1,4 @@
-### Módulo 1 - Implementação de Sockets (entrega 26/04/2020)
+# Módulo 1 - Implementação de Sockets (entrega 26/04/2020)
 
 ## Especificação da implementação
 
@@ -18,7 +18,7 @@ o usuário da aplicação 1 e vice-versa.
 O limite para o tamanho de cada mensagem deve ser de 4096 caracteres. Caso um usuário envie
 uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens automaticamente.
 
-## COMO USAR
+### COMO USAR
 
 * Para compilar o programa:
 
@@ -28,30 +28,33 @@ uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens 
 
 	make server
 
-** Ou, para escolher a porta, digite: 
-	./server <numero_da_porta>
+	* Ou, para escolher a porta, digite: 
+		./server <numero_da_porta>
 
 * Para criar o cliente (cada um em um terminal diferente - se conectara na porta 6666):
 
 	make client
 
-** Ou, para se conectar em uma porta diferente, digite:
-	./client <numero_da_porta>
+	* Ou, para se conectar em uma porta diferente, digite:
+		./client <numero_da_porta>
 
 
 
-## Outputs
+### Outputs
 
 * No terminal do Servidor:
 
-=== NOVO CHAT [PORTA <numero_da_porta>] CRIADO ===
+" === NOVO CHAT [PORTA <numero_da_porta>] CRIADO ===
+< conversa do chat aparecerá aqui >
 
 
 * No terminal do Cliente:
 
-Digite seu nome:
+" Digite seu nome: <digite aqui seu nome>
 
 === OLA, <nome>. BEM-VINDO AO CHAT [PORTA <numero_da_porta>] ===s
+< digite aqui suas mensagens a serem enviadas no char >
+< conversa do chat aparecerá aqui > "
 
 	
 
