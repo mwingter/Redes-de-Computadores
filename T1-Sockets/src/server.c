@@ -16,31 +16,40 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#include "server.h"
 
 #define MAX_CLIENTS 100
 #define BUFFER_SZ 1000
-#define NAME_LEN 32
 
 static _Atomic unsigned int cli_count = 0;
 static int uid = 10;
 
-//client structure
-typedef struct{
-	struct sockaddr_in adress;
-	int sockfd;
-	int uid;
-	char name[NAME_LEN];
-} client_t;
 
 client_t *clients[MAX_CLIENTS];
 
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+
+/*
+ * str_overwrite_stdout
+ *
+ * Funcao que atualiza a tela com um novo "> "
+ *              
+ */
 void str_overwrite_stdout(){
 	printf("\r%s", "> ");
 	fflush(stdout);
 }
 
+/*
+ * str_trim_lf
+ *
+ * Funcao que substitui o ultimo caracter de uma string, se este for '\n', por '\0'
+ * 
+ * @param 	arr			String a ser modificada
+ *			length		Tamanho da string
+ *               
+ */
 void str_trim_lf(char* arr, int length){
 	for(int i = 0; i < length; i++){
 		if(arr[i] == '\n'){
@@ -50,6 +59,14 @@ void str_trim_lf(char* arr, int length){
 	}
 }
 
+/*
+ * queue_add
+ *
+ * Funcao que 
+ * 
+ * @param 	cl 	Ponteiro para a estrutura do cliente
+ *               
+ */
 void queue_add(client_t *cl){
 	pthread_mutex_lock(&clients_mutex);
 
@@ -63,6 +80,14 @@ void queue_add(client_t *cl){
 	pthread_mutex_unlock(&clients_mutex);
 }
 
+/*
+ * queue_add
+ *
+ * Funcao que 
+ * 
+ * @param 	cl 	Ponteiro para a estrutura do cliente
+ *               
+ */
 void queue_remove(int uid){
 	pthread_mutex_lock(&clients_mutex);
 
@@ -78,8 +103,7 @@ void queue_remove(int uid){
 	pthread_mutex_unlock(&clients_mutex);
 }
 
-void print_ip_addr(struct sockaddr_in addr)
-{
+void print_ip_addr(struct sockaddr_in addr){
 	printf("%d.%d.%d.%d", addr.sin_addr.s_addr & 0xff, 
 						(addr.sin_addr.s_addr & 0xff00) >> 8,
 						(addr.sin_addr.s_addr & 0xff0000) >> 16,
@@ -114,12 +138,12 @@ void *handle_client(void *arg){
 
 	//name
 	if(recv(cli->sockfd, name, NAME_LEN, 0) <= 0 || strlen(name) < 2 || strlen(name) >= NAME_LEN - 1){
-		printf("Enter the name correctly\n");
+		printf("Digite seu nome corretamente.\n");
 		leave_flag = 1;
 	}
 	else{
 		strcpy(cli->name, name);
-		sprintf(buffer, "%s has joined\n", cli->name);
+		sprintf(buffer, "%s entrou no chat.\n", cli->name);
 		printf("%s", buffer);
 		send_message(buffer, cli->uid);
 	}
@@ -142,7 +166,7 @@ void *handle_client(void *arg){
 			}
 		}
 		else if(receive == 0 || strcmp(buffer, "exit") == 0){
-			sprintf(buffer, "%s has left\n", cli->name);
+			sprintf(buffer, "%s saiu do chat.\n", cli->name);
 			printf("%s", buffer);
 			send_message(buffer, cli->uid);
 			leave_flag = 1;
@@ -168,7 +192,7 @@ void *handle_client(void *arg){
 int main(int argc, char const *argv[])
 {
 	if(argc != 2){
-		printf("Usage: %s <port>\n", argv[0]);
+		printf("Como usar: %s <numero-da-porta>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -207,7 +231,7 @@ int main(int argc, char const *argv[])
 		return EXIT_FAILURE;
 	}
 
-	printf("=== WELCOME TO THE CHATROOM ===\n");
+	printf("=== NOVO CHAT [PORTA %s] CRIADO ===\n", argv[1]);
 
 	while(1){
 		socklen_t clilen = sizeof(cli_addr);
@@ -215,7 +239,7 @@ int main(int argc, char const *argv[])
 		
 		//check for MAX-CLIENTS
 		if((cli_count + 1) == MAX_CLIENTS){
-			printf("Maximum Clients connected. Connection Rejected? ");
+			printf("Maximo de clientes conectados. Coneccao Rejeitada. ");
 			print_ip_addr(cli_addr);
 			close(connfd);
 			continue;
