@@ -18,9 +18,8 @@
 
 #include "server.h"
 
-#define MAX_CLIENTS 100 //Máximo de clientes conectados
-#define BUFFER_SZ 100000 //Tamanho máximo de mensagem que o servidor pode receber
-#define BUFFER_AUX 4096 //Tamanho máximo para cada mensagem recebida
+#define MAX_CLIENTS 100
+#define BUFFER_SZ 1000
 
 static _Atomic unsigned int cli_count = 0;
 static int uid = 10;
@@ -63,7 +62,7 @@ void str_trim_lf(char* arr, int length){
 /*
  * queue_add
  *
- * Funcao que coloca os clientes em uma fila, para adicionar um a um no servidor
+ * Funcao que 
  * 
  * @param 	cl 	Ponteiro para a estrutura do cliente
  *               
@@ -82,11 +81,11 @@ void queue_add(client_t *cl){
 }
 
 /*
- * queue_remove
+ * queue_add
  *
- * Funcao que remove o cliente da fila
+ * Funcao que 
  * 
- * @param 	uid
+ * @param 	cl 	Ponteiro para a estrutura do cliente
  *               
  */
 void queue_remove(int uid){
@@ -104,14 +103,6 @@ void queue_remove(int uid){
 	pthread_mutex_unlock(&clients_mutex);
 }
 
-/*
- * print_ip_addr
- *
- * Funcao que 
- * 
- * @param 	addr 	
- *               
- */
 void print_ip_addr(struct sockaddr_in addr){
 	printf("%d.%d.%d.%d", addr.sin_addr.s_addr & 0xff, 
 						(addr.sin_addr.s_addr & 0xff00) >> 8,
@@ -120,15 +111,6 @@ void print_ip_addr(struct sockaddr_in addr){
 						);
 }
 
-/*
- * send_message
- *
- * Funcao que envia mensagem a um cliente
- * 
- * @param 	s 		String da mensagem a ser enviada
- 			uid 	Id do cliente
- *               
- */
 void send_message(char *s, int uid){
 	pthread_mutex_lock(&clients_mutex);
 
@@ -136,7 +118,7 @@ void send_message(char *s, int uid){
 		if(clients[i]){
 			if(clients[i]->uid != uid){
 				if(write(clients[i]->sockfd, s, strlen(s)) < 0){
-					printf("ERRO: Mensagem não enviada\n");
+					printf("ERROR: write to descriptor failed\n");
 					break;
 				}
 			}
@@ -146,66 +128,46 @@ void send_message(char *s, int uid){
 	pthread_mutex_unlock(&clients_mutex);
 }
 
-
-/*
- * send_message
- *
- * Thread que cuida de cada cliente
- * 
- * @param 	arg
- *               
- */
 void *handle_client(void *arg){
 	char buffer[BUFFER_SZ];
 	char name[NAME_LEN];
-	int leave_flag = 0;
+	int leave_flag = 1;
 	cli_count++;
 
 	client_t *cli = (client_t*)arg;
 
 	//name
+	do{
+		if(recv(cli->sockfd, name, NAME_LEN, 0) <= 0 || strlen(name) < 2 || strlen(name) >= NAME_LEN - 1){
+			printf("Digite seu nome corretamente.\n");
+		}
+		else
+			leave_flag=0;
 
-	if(recv(cli->sockfd, name, NAME_LEN, 0) <= 0 || strlen(name) < 2 || strlen(name) >= NAME_LEN - 1){
-		sprintf(buffer, "%s saiu do chat pois o nickname estava fora dos padrões.\n", cli->name);
-		printf("%s", buffer);
-		send_message(buffer, cli->uid);
-		leave_flag = 1;
-	}
-	else{
-		//utilizando strncpy para proteger contra buffer overflow
+	}while(leave_flag==1);
+	
+		//utilizando strcpy_s para proteger contra buffer overflow
 		strncpy(cli->name, name, 32);
 		sprintf(buffer, "%s entrou no chat.\n", cli->name);
 		printf("%s", buffer);
 		send_message(buffer, cli->uid);
-	}
 
 	bzero(buffer, BUFFER_SZ);
 
 	while(1){
 		if(leave_flag){
 			break;
+			
 		}
 
 		int receive = recv(cli->sockfd, buffer, BUFFER_SZ, 0);
 
 		if(receive > 0){
 			if(strlen(buffer) > 0){
-				if(strlen(buffer) < BUFFER_AUX){
-					send_message(buffer, cli->uid);
-					str_trim_lf(buffer, strlen(buffer));
+				send_message(buffer, cli->uid);
+				str_trim_lf(buffer, strlen(buffer));
 
-					printf("%s\n", buffer);
-				}
-				else{
-
-					// Caso alguem mande uma mensagem com o tamanho maior que o permitido, ele sera desconectado do servidor
-					// Para testar use o commando no terminal "nc localhost 1234" coloque nome, e depois envie uma mensagem maior que 4096
-					sprintf(buffer, "%s saiu do chat pois mandou msg maior que o maximo permitido.\n", cli->name);
-					printf("%s", buffer);
-					send_message(buffer, cli->uid);
-					close(cli->sockfd);
-					leave_flag = 1;
-				}
+				printf("%s\n", buffer);
 			}
 		}
 		else if(receive == 0 || strcmp(buffer, "exit") == 0){
@@ -215,6 +177,7 @@ void *handle_client(void *arg){
 			leave_flag = 1;
 		}
 		else{
+			printf("ERROR: -1\n");
 			leave_flag = 1;
 		}
 	
@@ -238,9 +201,7 @@ int main(int argc, char const *argv[])
 		return EXIT_FAILURE;
 	}
 
-
-	// Comandos necessarios para bindar na porta recebira pelo argv[1] esperando uma conexao TCP
-	char *ip = "0.0.0.0"; //bindando em todas as interfaces de rede
+	char *ip = "127.0.0.1";
 	int port = atoi(argv[1]);
 
 	int option = 1;
@@ -249,7 +210,7 @@ int main(int argc, char const *argv[])
 	struct sockaddr_in cli_addr;
 	pthread_t tid;
 
-	// Configurando socket
+	//socket settings
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(ip);
@@ -258,27 +219,25 @@ int main(int argc, char const *argv[])
 	//signals
 	signal(SIGPIPE, SIG_IGN);
 
-	// Abrindo socket
 	if(setsockopt(listenfd, SOL_SOCKET, (SO_REUSEPORT | SO_REUSEADDR), (char*)&option, sizeof(option)) < 0){
-		printf("ERRO: Não foi possivel abrir o socket.\n");
+		printf("ERROR: setsockopt\n");
 		return EXIT_FAILURE;
 	}
 
 	//bind
 	if(bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
-		printf("ERRO: Porta está sendo usada por outro processo, ou há um problema com o IP definido.\n");
+		printf("ERROR: bind\n");
 		return EXIT_FAILURE;
 	}
 
 	//listen
 	if(listen(listenfd, 10) < 0){
-		printf("ERRO: Não foi possivel colocar em modo listening.\n");
+		printf("ERROR: listen\n");
 		return EXIT_FAILURE;
 	}
 
 	printf("=== NOVO CHAT [PORTA %s] CRIADO ===\n", argv[1]);
 
-	// Esperando conexao
 	while(1){
 		socklen_t clilen = sizeof(cli_addr);
 		connfd = accept(listenfd, (struct sockaddr*)&cli_addr, &clilen);
@@ -291,15 +250,18 @@ int main(int argc, char const *argv[])
 			continue;
 		}
 
-		//Configurando o cliente
+		//client settings
 		client_t *cli = (client_t *)malloc(sizeof(client_t));
 		cli->adress = cli_addr;
 		cli->sockfd = connfd;
 		cli->uid = uid++;
 
-		//Inicia chat com o client
+		//add client to queue
 		queue_add(cli);
 		pthread_create(&tid, NULL, &handle_client, (void*)cli);
+
+		//reduce CPU usage
+		sleep(1);
 
 	}
 

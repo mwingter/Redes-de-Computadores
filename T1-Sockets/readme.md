@@ -25,7 +25,9 @@ uma mensagem maior do que isso ela deverá ser dividida em múltiplas mensagens 
 ## FUNCIONALIDADES
 
 Nesta aplicação é possivel criar um servidor em uma porta escolhida pelo usuario, e conectar multiplos clientes na porta aberta.
+Especificações do servidor: Ele aceita mensagens de até 4096. Caso o cliente envie uma mensagem maior que este valor, a conexão com o cliente será terminada. Foi decidido fazer desta forma por uma questão de performance do servidor, pois assim ele apenas recebe e imprime mensagens, ficando a cargo do cliente dividir mensagens grandes.
 	
+Caso queira testar esse funcionamento, pode utilizar o nc (ncat, telnet, etc), conectando no IP e porta do servidor, colocando o nome, e em seguida enviando uma mensagem maior que 4096. Este teste não pode ser realizado em nosso cliente pois ele segue as especificações (RFC) do servidor.
 
 ## COMO USAR
 

@@ -17,7 +17,7 @@
 #include <signal.h>
 
 #define MAX_CLIENTS 100 	//Numero maximo de clientes conectados
-#define BUFFER_SZ 4096 		//Este eh o limite de tamanho para cada mensagem
+#define BUFFER_SZ 4096 		//Tamanho limite para cada mensagem
 #define BUFFER_AUX 1000000 	//Auxiliar para mensagens maiores que o limite de 4096
 #define NAME_LEN 32 		//Tamanho maximo para nome do cliente
 
@@ -56,10 +56,22 @@ void str_trim_lf(char* arr, int length){
 	}
 }
 
+/*
+ * catch_ctrl_c_and_exit
+ *
+ * Funcao que atualiza a flag para desconexão do cliente. Se flag = 1, o cliente é desconectado do servidor.
+ *                
+ */
 void catch_ctrl_c_and_exit(){
 	flag = 1;
 }
 
+/*
+ * recv_msg_handler
+ *
+ * Funcao que gerencia o recebimento de mensagens.
+ *               
+ */
 void recv_msg_handler(){
 	char message[BUFFER_SZ] = {};
 
@@ -79,6 +91,12 @@ void recv_msg_handler(){
 	}
 }
 
+/*
+ * send_msg_handler
+ *
+ * Funcao que gerencia o enviamento de mensagens.
+ *               
+ */
 void send_msg_handler(){
 	char buffer[BUFFER_SZ+1] = {};
 	char buffer_aux[BUFFER_AUX] = {};
@@ -162,7 +180,7 @@ int main(int argc, char const *argv[])
 	int err = connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr));
 
 	if(err == -1){
-		printf("ERROR: connect\n");
+		printf("ERRO: Falha ao conectar ao servidor.\n");
 		return EXIT_FAILURE;
 	}
 
@@ -173,13 +191,13 @@ int main(int argc, char const *argv[])
 
 	pthread_t send_msg_thread;
 	if(pthread_create(&send_msg_thread, NULL, (void*)send_msg_handler, NULL) != 0){
-		printf("ERROR: pthread\n");
+		printf("ERRO: Falha ao enviar a mensagem.\n");
 		return EXIT_FAILURE;
 	}
 
 	pthread_t recv_msg_thread;
 	if(pthread_create(&recv_msg_thread, NULL, (void*)recv_msg_handler, NULL) != 0){
-		printf("ERROR: pthread\n");
+		printf("ERRO: Falha ao receber a mensagem.\n");
 		return EXIT_FAILURE;
 	}
 
@@ -190,7 +208,7 @@ int main(int argc, char const *argv[])
 		}
 	}
 
-	close(sockfd);
+	close(sockfd); //desconecta o cliente
 
 	return 0;
 }
