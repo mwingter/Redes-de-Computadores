@@ -1,4 +1,4 @@
-/* TRABALHO 1 - REDES
+/* TRABALHO 2 - REDES
 
 	Nome: Michelle Wingter da Silva
 	nUSP: 10783243
@@ -15,11 +15,12 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <stdbool.h>
 
 #define MAX_CLIENTS 100 	//Numero maximo de clientes conectados
 #define BUFFER_SZ 4096 		//Tamanho limite para cada mensagem
 #define BUFFER_AUX 1000000 	//Auxiliar para mensagens maiores que o limite de 4096
-#define NAME_LEN 32 		//Tamanho maximo para nome do cliente
+#define NAME_LEN 50		//Tamanho maximo para nome do cliente
 
 volatile sig_atomic_t flag = 0;
 int sockfd = 0;
@@ -54,6 +55,24 @@ void str_trim_lf(char* arr, int length){
 			break;
 		}
 	}
+}
+
+
+/*
+ * startsWith
+ *
+ * Funcao que verifica se uma string str se inicia com uma outra string pre
+ * 
+ * @param 	pre		Substring
+ *			str		String a ser verificada
+ *               
+ */
+bool startsWith(const char *pre, const char *str)
+{
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+
+    return lenstr < lenpre ? false : memcmp(pre, str, lenpre) == 0;
 }
 
 /*
@@ -112,9 +131,21 @@ void send_msg_handler(){
 		if(strcmp(buffer_aux, "/quit") == 0){
 			break;
 		}
+		else if(startsWith("/nickname ", buffer_aux)){
+			strcpy(name, &buffer_aux[10]);
+			send(sockfd, "/nickname ", 10, 0);
+		}
+		else if(strcmp(buffer_aux, "/ping") == 0){
+			send(sockfd, buffer_aux, strlen(buffer_aux), 0);
+		}
 		else{
 			if(strlen(buffer_aux) <  BUFFER_SZ){
-				sprintf(message, "%s: %s\n", name, buffer_aux);
+				if(strcmp(name, "-1") == 0){
+					sprintf(message, "%s\n", buffer_aux);
+				}
+				else{
+					sprintf(message, "%s: %s\n", name, buffer_aux);
+				}
 				send(sockfd, message, strlen(message), 0);
 			}
 			else{
@@ -129,7 +160,12 @@ void send_msg_handler(){
 					}
 					buffer[BUFFER_SZ] = '\0';
 					
-					sprintf(message, "%s: %s\n", name, buffer);
+					if(strcmp(name, "-1") == 0){
+						sprintf(message, "%s\n", buffer);
+					}
+					else{
+						sprintf(message, "%s: %s\n", name, buffer);
+					}
 
 					send(sockfd, message, strlen(message), 0);
 
@@ -150,24 +186,36 @@ void send_msg_handler(){
 
 int main(int argc, char const *argv[])
 {
+
+	printf("\n- Para conectar ao servidor, digite: /connect\n");
+
+	char enterChat[50] = "/connect";
+	while(1){
+		fgets(enterChat, 50, stdin);
+		printf("digitei: %s", enterChat);
+		if(strcmp(enterChat, "/connect\n") != 0){
+			printf("Comando inválido. Para conectar ao servidor, digite: /connect\n");
+		}
+		else{
+			break;
+		}
+	}
+
+
+
+	/*
 	if(argc != 2){
 		printf("Como usar: %s <numero-da-porta>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
+	*/
 
 	char *ip = "127.0.0.1";
 	int port = atoi(argv[1]);
+	//int port = 1234;
 
 	signal(SIGINT, catch_ctrl_c_and_exit);
 
-	printf("Digite seu nome: ");
-	fgets(name, NAME_LEN, stdin);
-	str_trim_lf(name, strlen(name));
-
-	if(strlen(name) > NAME_LEN - 1 || strlen(name) < 2){
-		printf("Digite seu nome corretamente.\n");
-		return EXIT_FAILURE;
-	}
 
 	struct sockaddr_in server_addr;
 	//socket settings
@@ -184,10 +232,27 @@ int main(int argc, char const *argv[])
 		return EXIT_FAILURE;
 	}
 
-	//send the name
-	send(sockfd, name, NAME_LEN, 0);
+	//send a standard name 
+	send(sockfd, "-1", NAME_LEN, 0);
+	strcpy(name, "-1");
 
-	printf("=== OLA, %s. BEM-VINDO AO CHAT [PORTA %s] ===\n", name, argv[1]);
+	printf("\n=== OLÁ! BEM-VINDO AO CHAT [PORTA %d] ===\n\n", port);
+	printf("Instruções:\n- Para mandar uma mensagem, basta digitar ao lado do simbolo '>' e teclar Enter\n- Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n- Para sair do chat, digite: /quit ou pressione Ctrl + D\n- Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem.");
+
+
+/*
+	printf("Digite seu nome: ");
+	fgets(name, NAME_LEN, stdin);
+	str_trim_lf(name, strlen(name));
+
+	if(strlen(name) > NAME_LEN - 1 || strlen(name) < 2){
+		printf("Digite seu nome corretamente.\n");
+		return EXIT_FAILURE;
+	}
+*/
+
+	//send the name
+	//send(sockfd, name, NAME_LEN, 0);
 
 	pthread_t send_msg_thread;
 	if(pthread_create(&send_msg_thread, NULL, (void*)send_msg_handler, NULL) != 0){

@@ -1,4 +1,4 @@
-/* TRABALHO 1 - REDES
+/* TRABALHO 2 - REDES
 
 	Nome: Michelle Wingter da Silva
 	nUSP: 10783243
@@ -23,7 +23,8 @@
 #define BUFFER_AUX 4096 //Tamanho máximo para cada mensagem recebida
 
 static _Atomic unsigned int cli_count = 0;
-static int uid = 10;
+static int uid = 0;
+
 
 
 client_t *clients[MAX_CLIENTS];
@@ -123,7 +124,7 @@ void print_ip_addr(struct sockaddr_in addr){
 /*
  * send_message
  *
- * Funcao que envia mensagem a um cliente
+ * Funcao que envia mensagem aos clientes conectados no servidor
  * 
  * @param 	s 		String da mensagem a ser enviada
  			uid 	Id do cliente
@@ -146,6 +147,32 @@ void send_message(char *s, int uid){
 	pthread_mutex_unlock(&clients_mutex);
 }
 
+/*
+ * respond_message
+ *
+ * Funcao que envia mensagem a um cliente
+ * 
+ * @param 	s 		String da mensagem a ser enviada
+ 			uid 	Id do cliente
+ *               
+ */
+void respond_message(char *s, int uid){
+	pthread_mutex_lock(&clients_mutex);
+
+	for (int i = 0; i < MAX_CLIENTS; i++){
+		if(clients[i]){
+			if(clients[i]->uid == uid){
+				if(write(clients[i]->sockfd, s, strlen(s)) < 0){
+					printf("ERRO: Mensagem não enviada\n");
+					break;
+				}
+			}
+		}
+	}
+
+	pthread_mutex_unlock(&clients_mutex);
+}
+
 
 /*
  * send_message
@@ -157,13 +184,13 @@ void send_message(char *s, int uid){
  */
 void *handle_client(void *arg){
 	char buffer[BUFFER_SZ];
+	char message[BUFFER_SZ];
 	char name[NAME_LEN];
 	int leave_flag = 0;
 	cli_count++;
 
 	client_t *cli = (client_t*)arg;
 
-	//name
 
 	if(recv(cli->sockfd, name, NAME_LEN, 0) <= 0 || strlen(name) < 2 || strlen(name) >= NAME_LEN - 1){
 		sprintf(buffer, "%s saiu do chat pois o nickname estava fora dos padrões.\n", cli->name);
@@ -172,8 +199,13 @@ void *handle_client(void *arg){
 		leave_flag = 1;
 	}
 	else{
-		//utilizando strncpy para proteger contra buffer overflow
-		strncpy(cli->name, name, 32);
+		
+		if(strcmp(name, "-1") == 0){
+			sprintf(cli->name, "Client-%d", cli->uid);
+		}
+		else{
+			strncpy(cli->name, name, 50); //utilizando strncpy para proteger contra buffer overflow
+		}
 		sprintf(buffer, "%s entrou no chat.\n", cli->name);
 		printf("%s", buffer);
 		send_message(buffer, cli->uid);
@@ -190,11 +222,30 @@ void *handle_client(void *arg){
 
 		if(receive > 0){
 			if(strlen(buffer) > 0){
-				if(strlen(buffer) < BUFFER_AUX){
-					send_message(buffer, cli->uid);
-					str_trim_lf(buffer, strlen(buffer));
+				if(strcmp(buffer, "/ping") == 0){
+					sprintf(buffer, "pong\n");
+					printf("%s", buffer);
+					respond_message(buffer, cli->uid);
+				}
+				else if(strcmp(buffer, "/nickname ") == 0){
+					strncpy(name, "/nickname ", 32);
+				}
+				else if(strlen(buffer) < BUFFER_AUX){
+					if(strcmp(name, "-1") == 0){
+						sprintf(message, "%s: %s", cli->name, buffer);
+						send_message(message, cli->uid);
+						str_trim_lf(buffer, strlen(buffer));
+						str_trim_lf(message, strlen(message));
+						printf("%s\n", message);
 
-					printf("%s\n", buffer);
+					}
+					else{
+						send_message(buffer, cli->uid);
+						str_trim_lf(buffer, strlen(buffer));
+						printf("%s\n", buffer);
+					}
+
+
 				}
 				else{
 
@@ -214,6 +265,7 @@ void *handle_client(void *arg){
 			send_message(buffer, cli->uid);
 			leave_flag = 1;
 		}
+
 		else{
 			leave_flag = 1;
 		}
