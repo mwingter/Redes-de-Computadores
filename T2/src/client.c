@@ -67,13 +67,30 @@ void str_trim_lf(char* arr, int length){
  *			str		String a ser verificada
  *               
  */
-bool startsWith(const char *pre, const char *str)
-{
+bool startsWith(const char *pre, const char *str){
     size_t lenpre = strlen(pre),
            lenstr = strlen(str);
 
     return lenstr < lenpre ? false : memcmp(pre, str, lenpre) == 0;
 }
+
+
+/*
+ * sigintHandler
+ *
+ * Funcao que verifica se o comando "Ctrl + C" foi pressionado e ignora-o.
+ * 
+ * @param 	pre		Substring
+ *			str		String a ser verificada
+ *               
+ */
+void sigintHandler(int sig_num){ 
+    /* Reseta o handler para pegar o SIGINT na próxima vez. */
+    signal(SIGINT, sigintHandler); 
+    printf("\n # Não é possível sair pressionando Ctrl+C #\n"); 
+    fflush(stdout); 
+}
+
 
 /*
  * catch_ctrl_c_and_exit
@@ -132,8 +149,13 @@ void send_msg_handler(){
 			break;
 		}
 		else if(startsWith("/nickname ", buffer_aux)){
-			strcpy(name, &buffer_aux[10]);
-			send(sockfd, "/nickname ", 10, 0);
+			if(strlen(buffer_aux) >  NAME_LEN+10){
+				printf("Nickname grande demais.\n");
+			}
+			else{
+				send(sockfd, buffer_aux, strlen(buffer_aux), 0);
+				strncpy(name, &buffer_aux[10], 50);
+			}
 		}
 		else if(strcmp(buffer_aux, "/ping") == 0){
 			send(sockfd, buffer_aux, strlen(buffer_aux), 0);
@@ -186,13 +208,13 @@ void send_msg_handler(){
 
 int main(int argc, char const *argv[])
 {
+	signal(SIGINT, sigintHandler);
 
 	printf("\n- Para conectar ao servidor, digite: /connect\n");
 
 	char enterChat[50] = "/connect";
 	while(1){
 		fgets(enterChat, 50, stdin);
-		printf("digitei: %s", enterChat);
 		if(strcmp(enterChat, "/connect\n") != 0){
 			printf("Comando inválido. Para conectar ao servidor, digite: /connect\n");
 		}
@@ -202,19 +224,16 @@ int main(int argc, char const *argv[])
 	}
 
 
-
-	/*
 	if(argc != 2){
 		printf("Como usar: %s <numero-da-porta>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	*/
+	
 
 	char *ip = "127.0.0.1";
 	int port = atoi(argv[1]);
-	//int port = 1234;
 
-	signal(SIGINT, catch_ctrl_c_and_exit);
+	//signal(SIGINT, catch_ctrl_c_and_exit);
 
 
 	struct sockaddr_in server_addr;
@@ -236,23 +255,13 @@ int main(int argc, char const *argv[])
 	send(sockfd, "-1", NAME_LEN, 0);
 	strcpy(name, "-1");
 
-	printf("\n=== OLÁ! BEM-VINDO AO CHAT [PORTA %d] ===\n\n", port);
-	printf("Instruções:\n- Para mandar uma mensagem, basta digitar ao lado do simbolo '>' e teclar Enter\n- Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n- Para sair do chat, digite: /quit ou pressione Ctrl + D\n- Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem.");
+	printf("\n=== OLÁ! BEM-VINDO AO CHAT [PORTA %d] ===\n", port);
+	printf("_______________________________________________________________________________________________\n");
+	printf("  INSTRUÇÕES:\n - Para mandar uma mensagem, basta digitar ao lado do simbolo '>' abaixo e teclar Enter\n - Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n - Para sair do chat, digite: /quit ou pressione Ctrl + D\n - Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem.\n");
+	printf("_______________________________________________________________________________________________\n\n");
 
+	signal(SIGINT, sigintHandler); 
 
-/*
-	printf("Digite seu nome: ");
-	fgets(name, NAME_LEN, stdin);
-	str_trim_lf(name, strlen(name));
-
-	if(strlen(name) > NAME_LEN - 1 || strlen(name) < 2){
-		printf("Digite seu nome corretamente.\n");
-		return EXIT_FAILURE;
-	}
-*/
-
-	//send the name
-	//send(sockfd, name, NAME_LEN, 0);
 
 	pthread_t send_msg_thread;
 	if(pthread_create(&send_msg_thread, NULL, (void*)send_msg_handler, NULL) != 0){

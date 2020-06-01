@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <stdbool.h>
 
 #include "server.h"
 
@@ -59,6 +60,22 @@ void str_trim_lf(char* arr, int length){
 			break;
 		}
 	}
+}
+
+/*
+ * startsWith
+ *
+ * Funcao que verifica se uma string str se inicia com uma outra string pre
+ * 
+ * @param 	pre		Substring
+ *			str		String a ser verificada
+ *               
+ */
+bool startsWith(const char *pre, const char *str){
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+
+    return lenstr < lenpre ? false : memcmp(pre, str, lenpre) == 0;
 }
 
 /*
@@ -150,10 +167,10 @@ void send_message(char *s, int uid){
 /*
  * respond_message
  *
- * Funcao que envia mensagem a um cliente
+ * Funcao que envia mensagem a um cliente de dado uid
  * 
  * @param 	s 		String da mensagem a ser enviada
- 			uid 	Id do cliente
+ 			uid 	uid do cliente
  *               
  */
 void respond_message(char *s, int uid){
@@ -204,7 +221,7 @@ void *handle_client(void *arg){
 			sprintf(cli->name, "Client-%d", cli->uid);
 		}
 		else{
-			strncpy(cli->name, name, 50); //utilizando strncpy para proteger contra buffer overflow
+			//strncpy(cli->name, name, 50); //utilizando strncpy para proteger contra buffer overflow
 		}
 		sprintf(buffer, "%s entrou no chat.\n", cli->name);
 		printf("%s", buffer);
@@ -224,11 +241,15 @@ void *handle_client(void *arg){
 			if(strlen(buffer) > 0){
 				if(strcmp(buffer, "/ping") == 0){
 					sprintf(buffer, "pong\n");
-					printf("%s", buffer);
+					//printf("%s", buffer);
 					respond_message(buffer, cli->uid);
 				}
-				else if(strcmp(buffer, "/nickname ") == 0){
-					strncpy(name, "/nickname ", 32);
+				/*else if(strcmp(buffer, "/nickname ") == 0){
+					strncpy(name, "/nickname ", NAME_LEN);
+				}*/
+				else if(startsWith("/nickname ", buffer)){
+					strncpy(cli->name, &buffer[10], 50);
+					strncpy(name, &buffer[10], 50);
 				}
 				else if(strlen(buffer) < BUFFER_AUX){
 					if(strcmp(name, "-1") == 0){
@@ -244,8 +265,6 @@ void *handle_client(void *arg){
 						str_trim_lf(buffer, strlen(buffer));
 						printf("%s\n", buffer);
 					}
-
-
 				}
 				else{
 
