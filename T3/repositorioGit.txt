@@ -1,0 +1,6 @@
+Nome: Michelle Wingter da Silva
+nUSP: 10783243
+
+Repositório Git:
+
+https://github.com/mwingter/Redes-de-Computadores/tree/master/T2
