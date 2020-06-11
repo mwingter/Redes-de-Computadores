@@ -1,5 +1,4 @@
 /* TRABALHO 2 - REDES
-
 	Nome: Michelle Wingter da Silva
 	nUSP: 10783243
 */
@@ -244,9 +243,6 @@ void *handle_client(void *arg){
 					//printf("%s", buffer);
 					respond_message(buffer, cli->uid);
 				}
-				/*else if(strcmp(buffer, "/nickname ") == 0){
-					strncpy(name, "/nickname ", NAME_LEN);
-				}*/
 				else if(startsWith("/nickname ", buffer)){
 					strncpy(cli->name, &buffer[10], 50);
 					strncpy(name, &buffer[10], 50);

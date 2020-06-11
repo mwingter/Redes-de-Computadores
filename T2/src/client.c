@@ -1,5 +1,4 @@
 /* TRABALHO 2 - REDES
-
 	Nome: Michelle Wingter da Silva
 	nUSP: 10783243
 */
@@ -30,7 +29,7 @@ char name[NAME_LEN];
 /*
  * str_overwrite_stdout
  *
- * Funcao que atualiza a tela com um novo "> "
+ * Funcao que atualiza a tela com um novo "> " em uma nova linha
  *              
  */
 void str_overwrite_stdout(){
@@ -137,17 +136,29 @@ void send_msg_handler(){
 	char buffer[BUFFER_SZ+1] = {};
 	char buffer_aux[BUFFER_AUX] = {};
 	char message[BUFFER_SZ + NAME_LEN];
+	int isCtrlD = 0;
 
 	while(1){
 		str_overwrite_stdout();
+		isCtrlD = 0;
 
-		fgets(buffer_aux, BUFFER_AUX, stdin);
+		while(fgets(buffer_aux, BUFFER_AUX, stdin) != NULL && isCtrlD == 0){
+			str_trim_lf(buffer_aux, BUFFER_AUX);
+			if(strlen(buffer_aux) == 0){
+				str_overwrite_stdout();
+			}
+			else{
+				isCtrlD = 1;
+				break;
+			}
 
-		str_trim_lf(buffer_aux, BUFFER_AUX);
+		}
 
-		if(strcmp(buffer_aux, "/quit") == 0){
+		if(strcmp(buffer_aux, "/quit") == 0 || isCtrlD == 0){
+			flag = 1;
 			break;
 		}
+		
 		else if(startsWith("/nickname ", buffer_aux)){
 			if(strlen(buffer_aux) >  NAME_LEN+10){
 				printf("Nickname grande demais.\n");
@@ -161,7 +172,7 @@ void send_msg_handler(){
 			send(sockfd, buffer_aux, strlen(buffer_aux), 0);
 		}
 		else{
-			if(strlen(buffer_aux) <  BUFFER_SZ){
+			if(strlen(buffer_aux) <  BUFFER_SZ){ //se a mensagem tiver até o tamanho máximo, envia normal
 				if(strcmp(name, "-1") == 0){
 					sprintf(message, "%s\n", buffer_aux);
 				}
@@ -170,7 +181,7 @@ void send_msg_handler(){
 				}
 				send(sockfd, message, strlen(message), 0);
 			}
-			else{
+			else{ //se a mensagem for maior que o tamanho máximo, será dividida em várias mensagens e enviadas em partes
 				int count = strlen(buffer_aux)/BUFFER_SZ;
 				if(strlen(buffer_aux) % BUFFER_SZ != 0){
 					count++; //quantidade de mensagens
@@ -256,9 +267,9 @@ int main(int argc, char const *argv[])
 	strcpy(name, "-1");
 
 	printf("\n=== OLÁ! BEM-VINDO AO CHAT [PORTA %d] ===\n", port);
-	printf("_______________________________________________________________________________________________\n");
-	printf("  INSTRUÇÕES:\n - Para mandar uma mensagem, basta digitar ao lado do simbolo '>' abaixo e teclar Enter\n - Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n - Para sair do chat, digite: /quit ou pressione Ctrl + D\n - Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem.\n");
-	printf("_______________________________________________________________________________________________\n\n");
+	printf("_____________________________________________________________________________________________\n");
+	printf("  INSTRUÇÕES:\n - Para mandar uma mensagem, basta digitar ao lado do simbolo '>' abaixo e teclar Enter para enviar\n - Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n - Para sair do chat, digite: /quit ou pressione Ctrl + D\n - Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem.\n");
+	printf("_____________________________________________________________________________________________\n\n");
 
 	signal(SIGINT, sigintHandler); 
 
