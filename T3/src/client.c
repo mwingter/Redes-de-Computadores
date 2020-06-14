@@ -158,7 +158,7 @@ void send_msg_handler(){
 			flag = 1;
 			break;
 		}
-		
+
 		else if(startsWith("/nickname ", buffer_aux)){
 			if(strlen(buffer_aux) >  NAME_LEN+10){
 				printf("Nickname grande demais.\n");
@@ -166,6 +166,14 @@ void send_msg_handler(){
 			else{
 				send(sockfd, buffer_aux, strlen(buffer_aux), 0);
 				strncpy(name, &buffer_aux[10], 50);
+			}
+		}
+		else if((startsWith("/join ", buffer_aux))){
+			if(strlen(buffer_aux) >  205){
+				printf("Nome de canal grande demais.\n");
+			}
+			else{
+				send(sockfd, buffer_aux, strlen(buffer_aux), 0);
 			}
 		}
 		else if(strcmp(buffer_aux, "/ping") == 0){
@@ -221,16 +229,26 @@ int main(int argc, char const *argv[])
 {
 	signal(SIGINT, sigintHandler);
 
-	printf("\n- Para conectar ao servidor, digite: /connect\n");
+	printf("\n- Para conectar ao servidor, digite: /connect\n- Para escolher um nickname, digite: /nickname <nickname_desejado>\n");
 
-	char enterChat[50] = "/connect";
+	char enterChat[100] = "/connect";
+	strcpy(name, "-1");
 	while(1){
-		fgets(enterChat, 50, stdin);
-		if(strcmp(enterChat, "/connect\n") != 0){
-			printf("Comando inválido. Para conectar ao servidor, digite: /connect\n");
+		fgets(enterChat, 100, stdin);
+		if(strcmp(enterChat, "/connect\n") == 0){
+			break;
+		}
+		if(startsWith("/nickname ", enterChat)){
+			if(strlen(enterChat) >  NAME_LEN+10){
+				printf("Nickname grande demais.\n");
+			}
+			else{
+				strncpy(name, &enterChat[10], 50); //salvando o nickname na variavel name
+				printf("Novo nickname: %s.\n", name);
+			}
 		}
 		else{
-			break;
+			printf("\nComando inválido.\n- Para conectar ao servidor, digite: /connect\n- Para escolher um nickname, digite: /nickname <nickname_desejado>\n");
 		}
 	}
 
@@ -262,9 +280,9 @@ int main(int argc, char const *argv[])
 		return EXIT_FAILURE;
 	}
 
-	//send a standard name 
-	send(sockfd, "-1", NAME_LEN, 0);
-	strcpy(name, "-1");
+	//send the nickname
+	send(sockfd, name, NAME_LEN, 0);
+	//strcpy(name, "-1");
 
 	printf("\n=== OLÁ! BEM-VINDO AO CHAT [PORTA %d] ===\n", port);
 	printf("_____________________________________________________________________________________________\n");

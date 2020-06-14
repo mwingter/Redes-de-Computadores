@@ -19,15 +19,18 @@
 #include "server.h"
 
 #define MAX_CLIENTS 100 //Máximo de clientes conectados
+#define MAX_CHANNELS 100 //Máximo de canais criados
 #define BUFFER_SZ 100000 //Tamanho máximo de mensagem que o servidor pode receber
 #define BUFFER_AUX 4096 //Tamanho máximo para cada mensagem recebida
 
 static _Atomic unsigned int cli_count = 0;
 static int uid = 0;
 
-
-
 client_t *clients[MAX_CLIENTS];
+
+char* client_channel[1001]; //vetor que guarda qual canal cada cliente está conectado. O indice do vetor é o uid do cliente.
+channel_c *channels[MAX_CHANNELS]; //vetor que guarda os canais abertos
+int channel_count = 0;
 
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -152,9 +155,11 @@ void send_message(char *s, int uid){
 	for (int i = 0; i < MAX_CLIENTS; i++){
 		if(clients[i]){
 			if(clients[i]->uid != uid){
-				if(write(clients[i]->sockfd, s, strlen(s)) < 0){
-					printf("ERRO: Mensagem não enviada\n");
-					break;
+				if(strcmp(client_channel[uid],client_channel[clients[i]->uid]) == 0){ //verifica se os clientes estão no mesmo canal
+					if(write(clients[i]->sockfd, s, strlen(s)) < 0){
+						printf("ERRO: Mensagem não enviada\n");
+						break;
+					}
 				}
 			}
 		}
@@ -202,6 +207,7 @@ void *handle_client(void *arg){
 	char buffer[BUFFER_SZ];
 	char message[BUFFER_SZ];
 	char name[NAME_LEN];
+	char channel_name[CHANNEL_NAME_LEN];
 	int leave_flag = 0;
 	cli_count++;
 
@@ -246,6 +252,56 @@ void *handle_client(void *arg){
 				else if(startsWith("/nickname ", buffer)){
 					strncpy(cli->name, &buffer[10], 50);
 					strncpy(name, &buffer[10], 50);
+					sprintf(buffer, "Você trocou seu nickname para: %s\n", cli->name);
+					respond_message(buffer, cli->uid);
+				}
+				else if(startsWith("/join ", buffer)){
+					str_trim_lf(buffer, strlen(buffer));
+					strncpy(channel_name, &buffer[6], 200);
+					
+					client_channel[cli->uid] = channel_name;
+					
+
+					//buscando se o canal existe, se não existir, cria um novo canal e coloca o primeiro cliente que entrou como admin
+					bool ch_existe = false;
+					int ch_index = -1;
+					for (int i = 0; i < MAX_CHANNELS; i++){
+						if((channels[i])){ //se na posição i há um canal
+							if(strcmp(channels[i]->ch_name, channel_name) == 0){ // se o canal ja existir
+								ch_existe = true;
+								ch_index = i;
+								break;
+							}
+						}
+					}
+					if(ch_existe == false){ // se o canal não tiver já sido criado
+						for (int i = 0; i < MAX_CHANNELS; i++){
+							if(!(channels[i])){
+								channel_c *ch = (channel_c *)malloc(sizeof(channel_c));
+								strcpy(ch->ch_name, channel_name);
+								ch->admin_id = cli->uid;
+								strcpy(ch->admin_name, cli->name);
+								ch->users = 1;
+								channels[i] = ch;
+								ch_index = i;
+								ch_existe = true;
+								break;
+							}
+						}
+					}
+					if(ch_existe == false){ //se o canal não foi criado, significa que já tem o máximo de canais permitido
+						sprintf(buffer, "ERRO. Não é possível criar mais canais.\n");
+						printf("%s\n", buffer);
+					}
+					else{
+						printf("O cliente %s entrou no canal <%s>\n", cli->name, client_channel[cli->uid]);
+						printf("----- Admin do Canal: %s, ID: %d ------\n", channels[ch_index]->admin_name, channels[ch_index]->admin_id);
+						sprintf(buffer, "\n=========================================\nVocê entrou no canal: %s\n=========================================\n----- Admin do Canal: %s, ID: %d ------\n\n", channel_name, channels[ch_index]->admin_name, channels[ch_index]->admin_id);
+						respond_message(buffer, cli->uid);
+					}
+
+
+
 				}
 				else if(strlen(buffer) < BUFFER_AUX){
 					if(strcmp(name, "-1") == 0){
@@ -304,6 +360,12 @@ int main(int argc, char const *argv[])
 		printf("Como usar: %s <numero-da-porta>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	for (int i = 0; i < 1000; ++i)
+	{
+		client_channel[i] = "-1";
+	}
+
 
 
 	// Comandos necessarios para bindar na porta recebira pelo argv[1] esperando uma conexao TCP

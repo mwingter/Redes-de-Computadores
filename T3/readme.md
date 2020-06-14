@@ -3,6 +3,7 @@ nUSP: 10783243
 
 # Módulo 1 - Implementação de Sockets
 # Módulo 2 - Comunicação entre múltiplos clientes e servidor
+# Módulo 3 - Implementação de múltiplos canais
 
 
 ## Especificação da implementação

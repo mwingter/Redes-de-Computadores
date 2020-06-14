@@ -4,6 +4,8 @@
 
 	#define NAME_LEN 50
 
+	#define CHANNEL_NAME_LEN 201
+
 	//####### Estrutura cliente ########
 	typedef struct{
 		struct sockaddr_in adress;
@@ -11,6 +13,14 @@
 		int uid;
 		char name[NAME_LEN];
 	} client_t;
+
+	//####### Estrutura canal ########
+	typedef struct{
+		char ch_name[CHANNEL_NAME_LEN];
+		int admin_id;
+		char admin_name[NAME_LEN];
+		int users;
+	} channel_c;
 
 
 	//####### Funcoes ########
