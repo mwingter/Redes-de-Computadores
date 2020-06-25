@@ -229,27 +229,36 @@ int main(int argc, char const *argv[])
 {
 	signal(SIGINT, sigintHandler);
 
-	printf("\n- Para conectar ao servidor, digite: /connect\n- Para escolher um nickname, digite: /nickname <nickname_desejado>\n");
+	printf("\n- Para conectar ao servidor, digite: /connect\n- Para escolher um nickname, digite: /nickname <nickname_desejado>\n- Para sair, digite: /quit ou pressione Ctrl + D\n");
 
 	char enterChat[100] = "/connect";
 	strcpy(name, "-1");
 	while(1){
-		fgets(enterChat, 100, stdin);
-		if(strcmp(enterChat, "/connect\n") == 0){
+		
+		if(fgets(enterChat, 100, stdin) == NULL || strcmp(enterChat, "/quit\n") == 0){
+			printf("\nVolte sempre!\n");
+			return 0;
+		}
+		str_trim_lf(enterChat, 100);
+
+		if(strcmp(enterChat, "/connect\0") == 0){
 			break;
 		}
-		if(startsWith("/nickname ", enterChat)){
-			if(strlen(enterChat) >  NAME_LEN+10){
-				printf("Nickname grande demais.\n");
+		else if(startsWith("/nickname ", enterChat)){
+			if(strlen(enterChat) >=  NAME_LEN+10 || strlen(enterChat) < 12){
+				printf("Nickname grande ou pequeno demais.\n");
 			}
 			else{
-				strncpy(name, &enterChat[10], 50); //salvando o nickname na variavel name
-				printf("Novo nickname: %s.\n", name);
+				strncpy(name, &enterChat[10], NAME_LEN-1); //salvando o nickname na variavel name
+				printf("Novo nickname: %s\n", name);
+				str_trim_lf(name, strlen(name));
 			}
 		}
+
 		else{
-			printf("\nComando inválido.\n- Para conectar ao servidor, digite: /connect\n- Para escolher um nickname, digite: /nickname <nickname_desejado>\n");
+			printf("\nComando inválido.\n- Para conectar ao servidor, digite: /connect\n- Para escolher um nickname, digite: /nickname <nickname_desejado>\n- Para sair do chat, digite: /quit ou pressione Ctrl + D\n");
 		}
+		//bzero(enterChat, BUFFER_SZ);
 	}
 
 
@@ -281,8 +290,8 @@ int main(int argc, char const *argv[])
 	}
 
 	//send the nickname
-	send(sockfd, name, NAME_LEN, 0);
 	//strcpy(name, "-1");
+	send(sockfd, name, NAME_LEN, 0);
 
 	printf("\n=== OLÁ! BEM-VINDO AO CHAT [PORTA %d] ===\n", port);
 	printf("_____________________________________________________________________________________________\n");

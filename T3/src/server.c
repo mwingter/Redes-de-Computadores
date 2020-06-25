@@ -28,7 +28,7 @@ static int uid = 0;
 
 client_t *clients[MAX_CLIENTS];
 
-char* client_channel[1001]; //vetor que guarda qual canal cada cliente está conectado. O indice do vetor é o uid do cliente.
+char* client_channel[1001]; //vetor que guarda o nome de qual canal cada cliente está conectado. O indice do vetor é o uid do cliente. Se o cliente não estiver em nenhum canal, o valor será "-1"
 channel_c *channels[MAX_CHANNELS]; //vetor que guarda os canais abertos
 int channel_count = 0;
 
@@ -151,11 +151,13 @@ void print_ip_addr(struct sockaddr_in addr){
  */
 void send_message(char *s, int uid){
 	pthread_mutex_lock(&clients_mutex);
+	//printf("\n====Enviando mensagemmm\n");
 
 	for (int i = 0; i < MAX_CLIENTS; i++){
 		if(clients[i]){
 			if(clients[i]->uid != uid){
 				if(strcmp(client_channel[uid],client_channel[clients[i]->uid]) == 0){ //verifica se os clientes estão no mesmo canal
+					//printf("==Agora envia a mensagem!\n\n");
 					if(write(clients[i]->sockfd, s, strlen(s)) < 0){
 						printf("ERRO: Mensagem não enviada\n");
 						break;
@@ -194,6 +196,12 @@ void respond_message(char *s, int uid){
 	pthread_mutex_unlock(&clients_mutex);
 }
 
+void close_channel(int index){
+
+
+
+}
+
 
 /*
  * send_message
@@ -226,7 +234,7 @@ void *handle_client(void *arg){
 			sprintf(cli->name, "Client-%d", cli->uid);
 		}
 		else{
-			//strncpy(cli->name, name, 50); //utilizando strncpy para proteger contra buffer overflow
+			strncpy(cli->name, name, 50); //utilizando strncpy para proteger contra buffer overflow
 		}
 		sprintf(buffer, "%s entrou no chat.\n", cli->name);
 		printf("%s", buffer);
@@ -250,12 +258,38 @@ void *handle_client(void *arg){
 					respond_message(buffer, cli->uid);
 				}
 				else if(startsWith("/nickname ", buffer)){
-					strncpy(cli->name, &buffer[10], 50);
-					strncpy(name, &buffer[10], 50);
+					strncpy(cli->name, &buffer[10], NAME_LEN);
+					strncpy(name, &buffer[10], NAME_LEN);
 					sprintf(buffer, "Você trocou seu nickname para: %s\n", cli->name);
 					respond_message(buffer, cli->uid);
+					if(strcmp(client_channel[cli->uid],"-1") != 0){ //se o cliente é admin de um canal, atualiza o nome do admin deste canal
+						for (int i = 0; i < MAX_CHANNELS; ++i){
+							if(strcmp(client_channel[cli->uid],channels[i]->ch_name) == 0){ //procurando o canal com o nome do canal administrado pelo cliente
+								strncpy(channels[i]->admin_name, cli->name, NAME_LEN);
+								sprintf(buffer, "Atualização: ----- Admin do Canal <%s>: %s, ID: %d ------\n", channels[i]->ch_name, cli->name, cli->uid);
+								respond_message(buffer, cli->uid);
+								send_message(buffer, cli->uid);
+								break;
+							}
+						}
+					}
 				}
 				else if(startsWith("/join ", buffer)){
+					if(strcmp(client_channel[cli->uid],"-1") != 0){ //se o cliente já estiver em um canal, e estiver tentando entrar em outro
+						for (int i = 0; i < MAX_CHANNELS; ++i){
+							if(strcmp(client_channel[cli->uid],channels[i]->ch_name) == 0){
+								if(strcmp(cli->name,channels[i]->admin_name) == 0){ //se o cliente for o admin do canal em que está, o canal será fechado
+									printf("\n----FECHANDO CANAL---\n");
+									close_channel(i);
+									break;
+								}
+
+							}
+						}
+
+
+						//sprintf(buffer, "ERRO. Não é possível criar mais canais.\n");
+					}
 					str_trim_lf(buffer, strlen(buffer));
 					strncpy(channel_name, &buffer[6], 200);
 					
@@ -295,14 +329,13 @@ void *handle_client(void *arg){
 					}
 					else{
 						printf("O cliente %s entrou no canal <%s>\n", cli->name, client_channel[cli->uid]);
-						printf("----- Admin do Canal: %s, ID: %d ------\n", channels[ch_index]->admin_name, channels[ch_index]->admin_id);
-						sprintf(buffer, "\n=========================================\nVocê entrou no canal: %s\n=========================================\n----- Admin do Canal: %s, ID: %d ------\n\n", channel_name, channels[ch_index]->admin_name, channels[ch_index]->admin_id);
+						printf("----- Admin do Canal <%s>: %s, ID: %d ------\n", channel_name, channels[ch_index]->admin_name, channels[ch_index]->admin_id);
+						sprintf(buffer, "\n=========================================\nVocê entrou no canal <%s>\n=========================================\n----- Admin do Canal <%s>: %s, ID: %d ------\n\n", channel_name, channel_name, channels[ch_index]->admin_name, channels[ch_index]->admin_id);
 						respond_message(buffer, cli->uid);
 					}
 
-
-
 				}
+
 				else if(strlen(buffer) < BUFFER_AUX){
 					if(strcmp(name, "-1") == 0){
 						sprintf(message, "%s: %s", cli->name, buffer);
