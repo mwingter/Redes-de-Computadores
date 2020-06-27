@@ -309,7 +309,7 @@ int main(int argc, char const *argv[])
 
 	printf("\n=== OLÁ! BEM-VINDO AO CHAT [PORTA %d] ===\n", port);
 	printf("_____________________________________________________________________________________________\n");
-	printf("  INSTRUÇÕES:\n - Para mandar uma mensagem, basta digitar ao lado do simbolo '>' abaixo e teclar Enter para enviar\n - Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n - Para sair do chat, digite: /quit ou pressione Ctrl + D\n - Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem.\n");
+	printf("  INSTRUÇÕES:\n - Para mandar uma mensagem, basta digitar ao lado do simbolo '>' abaixo e teclar Enter\n - Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n - Para entrar em um canal, digite: /join <Nome_do_Canal>\n - Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem\n - Para sair do chat, digite: /quit ou pressione Ctrl + D\n");
 	printf("_____________________________________________________________________________________________\n\n");
 
 	signal(SIGINT, sigintHandler); 
