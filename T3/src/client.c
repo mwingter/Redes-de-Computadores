@@ -1,4 +1,4 @@
-/* TRABALHO 2 - REDES
+/* TRABALHO 3 - REDES
 	Nome: Michelle Wingter da Silva
 	nUSP: 10783243
 */
@@ -23,29 +23,28 @@
 
 volatile sig_atomic_t flag = 0;
 int sockfd = 0;
+
 char name[NAME_LEN];
+bool onChannel = false;
 
 
 /*
  * str_overwrite_stdout
  *
- * Funcao que atualiza a tela com um novo "> " em uma nova linha
- *              
+ * Funcao que atualiza a tela com um novo "> " em uma nova linha            
  */
 void str_overwrite_stdout(){
 	printf("\r%s", "> ");
 	fflush(stdout);
 }
 
-
 /*
  * str_trim_lf
  *
- * Funcao que substitui o ultimo caracter de uma string, se este for '\n', por '\0'
+ * Funcao que substitui o ultimo caracter de uma string se este for '\n', por '\0'
  * 
- * @param 	arr			String a ser modificada
- *			length		Tamanho da string
- *               
+ * @arr			String a ser modificada
+ * @length		Tamanho da string              
  */
 void str_trim_lf(char* arr, int length){
 	for(int i = 0; i < length; i++){
@@ -56,15 +55,13 @@ void str_trim_lf(char* arr, int length){
 	}
 }
 
-
 /*
  * startsWith
  *
- * Funcao que verifica se uma string str se inicia com uma outra string pre
+ * Funcao que verifica se uma string 'str' se inicia com uma outra string 'pre'
  * 
- * @param 	pre		Substring
- *			str		String a ser verificada
- *               
+ * @pre		Substring
+ * @str		String a ser verificada             
  */
 bool startsWith(const char *pre, const char *str){
     size_t lenpre = strlen(pre),
@@ -73,15 +70,13 @@ bool startsWith(const char *pre, const char *str){
     return lenstr < lenpre ? false : memcmp(pre, str, lenpre) == 0;
 }
 
-
 /*
  * sigintHandler
  *
- * Funcao que verifica se o comando "Ctrl + C" foi pressionado e ignora-o.
+ * Funcao que verifica se o sinal de que o comando "Ctrl + C" foi pressionado, e ignora-o.
  * 
- * @param 	pre		Substring
- *			str		String a ser verificada
- *               
+ * @pre		Substring
+ * @str		String a ser verificada              
  */
 void sigintHandler(int sig_num){ 
     /* Reseta o handler para pegar o SIGINT na próxima vez. */
@@ -90,12 +85,10 @@ void sigintHandler(int sig_num){
     fflush(stdout); 
 }
 
-
 /*
  * catch_ctrl_c_and_exit
  *
- * Funcao que atualiza a flag para desconexão do cliente. Se flag = 1, o cliente é desconectado do servidor.
- *                
+ * Funcao que atualiza a flag para desconexão do cliente. Se flag = 1, o cliente é desconectado do servidor.              
  */
 void catch_ctrl_c_and_exit(){
 	flag = 1;
@@ -104,8 +97,7 @@ void catch_ctrl_c_and_exit(){
 /*
  * recv_msg_handler
  *
- * Funcao que gerencia o recebimento de mensagens.
- *               
+ * Funcao que gerencia o recebimento de mensagens.             
  */
 void recv_msg_handler(){
 	char message[BUFFER_SZ] = {};
@@ -114,10 +106,14 @@ void recv_msg_handler(){
 		int receive = recv(sockfd, message, BUFFER_SZ, 0);
 
 		if(receive > 0){
-			printf("%s ", message);
+			if(startsWith("/saidasala ", message)){
+				onChannel = false;
+			}
+			else{
+				printf("%s ", message);
+			}
 			str_overwrite_stdout();
-			
-			
+						
 		}
 		else if(receive == 0){
 			break;
@@ -129,8 +125,7 @@ void recv_msg_handler(){
 /*
  * send_msg_handler
  *
- * Funcao que gerencia o enviamento de mensagens.
- *               
+ * Funcao que gerencia o envio de mensagens.             
  */
 void send_msg_handler(){
 	char buffer[BUFFER_SZ+1] = {};
@@ -160,23 +155,41 @@ void send_msg_handler(){
 		}
 
 		else if(startsWith("/nickname ", buffer_aux)){
-			if(strlen(buffer_aux) >  NAME_LEN+10){
-				printf("Nickname grande demais.\n");
+			if(strlen(buffer_aux) >  NAME_LEN+10 || strlen(buffer_aux) < 12){
+				printf("Nickname pequeno ou grande demais.\n");
 			}
 			else{
 				send(sockfd, buffer_aux, strlen(buffer_aux), 0);
 				strncpy(name, &buffer_aux[10], 50);
 			}
 		}
-		else if((startsWith("/join ", buffer_aux))){
-			if(strlen(buffer_aux) >  205){
-				printf("Nome de canal grande demais.\n");
+		else if(startsWith("/join ", buffer_aux)){
+			if(strlen(buffer_aux) >  205 || strlen(buffer_aux) < 8){
+				printf("Nome de canal pequeno ou grande demais.\n");
 			}
 			else{
-				send(sockfd, buffer_aux, strlen(buffer_aux), 0);
+				if(onChannel == false){
+					send(sockfd, buffer_aux, strlen(buffer_aux), 0);
+					onChannel = true;
+				}
+				else{
+					printf("ERRO: Você já está em um canal. Para entrar em outro canal, você precisa sair do atual primeiro, digitando: /leavechannel\n\n");
+				}
 			}
 		}
 		else if(strcmp(buffer_aux, "/ping") == 0){
+			send(sockfd, buffer_aux, strlen(buffer_aux), 0);
+		}
+		else if(strcmp(buffer_aux, "/leavechannel") == 0){
+			if (onChannel == true){
+				send(sockfd, buffer_aux, strlen(buffer_aux), 0);
+				onChannel = false;	
+			}
+			else{
+				printf("ERRO: Você não está em nenhum canal.\n\n");
+			}
+		}
+		else if(startsWith("/kick ", buffer_aux) || startsWith("/mute ", buffer_aux) || startsWith("/unmute ", buffer_aux) || startsWith("/whois ", buffer_aux)){
 			send(sockfd, buffer_aux, strlen(buffer_aux), 0);
 		}
 		else{
@@ -219,6 +232,7 @@ void send_msg_handler(){
 		}
 
 		bzero(buffer, BUFFER_SZ);
+		bzero(buffer_aux, BUFFER_SZ);
 		bzero(message, BUFFER_SZ + NAME_LEN);
 	}
 	catch_ctrl_c_and_exit(2);
@@ -295,7 +309,7 @@ int main(int argc, char const *argv[])
 
 	printf("\n=== OLÁ! BEM-VINDO AO CHAT [PORTA %d] ===\n", port);
 	printf("_____________________________________________________________________________________________\n");
-	printf("  INSTRUÇÕES:\n - Para mandar uma mensagem, basta digitar ao lado do simbolo '>' abaixo e teclar Enter para enviar\n - Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n - Para sair do chat, digite: /quit ou pressione Ctrl + D\n - Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem.\n");
+	printf("  INSTRUÇÕES:\n - Para mandar uma mensagem, basta digitar ao lado do simbolo '>' abaixo e teclar Enter\n - Para escolher um nickname, digite: /nickname <Nickname_Desejado>\n - Para entrar em um canal, digite: /join <Nome_do_Canal>\n - Digite /ping para receber do servidor um retorno 'pong' assim que este receber a mensagem\n - Para sair do chat, digite: /quit ou pressione Ctrl + D\n");
 	printf("_____________________________________________________________________________________________\n\n");
 
 	signal(SIGINT, sigintHandler); 
