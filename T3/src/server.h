@@ -19,7 +19,8 @@
 		char ch_name[CHANNEL_NAME_LEN];
 		int admin_id;
 		char admin_name[NAME_LEN];
-		int users;
+		int num_users;
+		int clients[100];
 	} channel_c;
 
 
@@ -40,6 +41,8 @@
 	void send_message(char *s, int uid);
 
 	void respond_message(char *s, int uid);
+
+	void kick_user(int cli_id, char* cli_name, int ch_ind);
 
 	void *handle_client(void *arg);
 
