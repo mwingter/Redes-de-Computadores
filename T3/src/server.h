@@ -3,7 +3,6 @@
 	#define SERVER_H
 
 	#define NAME_LEN 50
-
 	#define CHANNEL_NAME_LEN 201
 
 	//####### Estrutura cliente ########
@@ -24,7 +23,7 @@
 	} channel_c;
 
 
-	//####### Funcoes ########
+	//####### Funções ########
 
 	void str_overwrite_stdout();
 
@@ -38,11 +37,21 @@
 
 	void print_ip_addr(struct sockaddr_in addr);
 
+	void string_ip_addr(struct sockaddr_in addr, char* ip);
+
 	void send_message(char *s, int uid);
 
 	void respond_message(char *s, int uid);
 
+	void reset_channel(int index);
+
+	void close_channel(int ch_index);
+
 	void kick_user(int cli_id, char* cli_name, int ch_ind);
+
+	void mute_user(int cli_id, char* cli_name, int ch_ind);
+
+	void unmute_user(int cli_id, char* cli_name, int ch_ind);
 
 	void *handle_client(void *arg);
 

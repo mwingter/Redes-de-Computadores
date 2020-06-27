@@ -3,13 +3,15 @@
 	#define CLIENT_H
 
 	
-	//####### Funcoes ########
+	//####### Funções ########
 
 	void str_overwrite_stdout();
 
 	void str_trim_lf(char* arr, int length);
 
 	bool startsWith(const char *pre, const char *str);
+
+	void sigintHandler(int sig_num);
 
 	void catch_ctrl_c_and_exit();
 

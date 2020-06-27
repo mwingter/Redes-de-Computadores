@@ -1,4 +1,4 @@
-/* TRABALHO 2 - REDES
+/* TRABALHO 3 - REDES
 	Nome: Michelle Wingter da Silva
 	nUSP: 10783243
 */
@@ -38,8 +38,7 @@ pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 /*
  * str_overwrite_stdout
  *
- * Funcao que atualiza a tela com um novo "> "
- *              
+ * Funcao que atualiza a tela com um novo "> " em uma nova linha             
  */
 void str_overwrite_stdout(){
 	printf("\r%s", "> ");
@@ -49,11 +48,10 @@ void str_overwrite_stdout(){
 /*
  * str_trim_lf
  *
- * Funcao que substitui o ultimo caracter de uma string, se este for '\n', por '\0'
+ * Funcao que substitui o ultimo caracter de uma string se este for '\n', por '\0'
  * 
- * @param 	arr			String a ser modificada
- *			length		Tamanho da string
- *               
+ * @arr			String a ser modificada
+ * @length		Tamanho da string             
  */
 void str_trim_lf(char* arr, int length){
 	for(int i = 0; i < length; i++){
@@ -67,11 +65,10 @@ void str_trim_lf(char* arr, int length){
 /*
  * startsWith
  *
- * Funcao que verifica se uma string str se inicia com uma outra string pre
+ * Funcao que verifica se uma string 'str' se inicia com uma outra string 'pre'
  * 
- * @param 	pre		Substring
- *			str		String a ser verificada
- *               
+ * @pre		Substring
+ * @str		String a ser verificada             
  */
 bool startsWith(const char *pre, const char *str){
     size_t lenpre = strlen(pre),
@@ -83,10 +80,9 @@ bool startsWith(const char *pre, const char *str){
 /*
  * queue_add
  *
- * Funcao que coloca os clientes em uma fila, para adicionar um a um no servidor
+ * Funcao que coloca os clientes em uma fila
  * 
- * @param 	cl 	Ponteiro para a estrutura do cliente
- *               
+ * @cl 	Ponteiro para a estrutura do cliente            
  */
 void queue_add(client_t *cl){
 	pthread_mutex_lock(&clients_mutex);
@@ -106,8 +102,7 @@ void queue_add(client_t *cl){
  *
  * Funcao que remove o cliente da fila
  * 
- * @param 	uid
- *               
+ * @uid 	Uid do cliente a ser removido da fila            
  */
 void queue_remove(int uid){
 	pthread_mutex_lock(&clients_mutex);
@@ -127,10 +122,9 @@ void queue_remove(int uid){
 /*
  * print_ip_addr
  *
- * Funcao que 
+ * Funcao que printa um endereço de ip de um cliente
  * 
- * @param 	addr 	
- *               
+ * @addr 	Endereço de Ip           
  */
 void print_ip_addr(struct sockaddr_in addr){
 	printf("%d.%d.%d.%d", addr.sin_addr.s_addr & 0xff, 
@@ -140,7 +134,14 @@ void print_ip_addr(struct sockaddr_in addr){
 						);
 }
 
-
+/*
+ * string_ip_addr
+ *
+ * Funcao que salva na string ip o endereço de ip de um cliente
+ * 
+ * @addr 	Endereço de ip de um cliente
+ * @ip 		String onde será salvo o ip            
+ */
 void string_ip_addr(struct sockaddr_in addr, char* ip){
 	sprintf(ip, "\n---> O IP do cliente é: %d.%d.%d.%d\n", addr.sin_addr.s_addr & 0xff, 
 						(addr.sin_addr.s_addr & 0xff00) >> 8,
@@ -154,9 +155,8 @@ void string_ip_addr(struct sockaddr_in addr, char* ip){
  *
  * Funcao que envia mensagem aos clientes conectados no servidor
  * 
- * @param 	s 		String da mensagem a ser enviada
- 			uid 	Id do cliente
- *               
+ * @s 		String da mensagem a ser enviada
+ * @uid 	Id do cliente             
  */
 void send_message(char *s, int uid){
 	if(muted_client[uid] == 1 && strcmp(client_channel[uid], "-1") != 0){ //verifica se o cliente que esta enviando a msg está mutado
@@ -187,9 +187,8 @@ void send_message(char *s, int uid){
  *
  * Funcao que envia mensagem a um cliente de dado uid
  * 
- * @param 	s 		String da mensagem a ser enviada
- 			uid 	uid do cliente
- *               
+ * @s 		String da mensagem a ser enviada
+ * @uid 	uid do cliente          
  */
 void respond_message(char *s, int uid){
 	pthread_mutex_lock(&clients_mutex);
@@ -208,7 +207,13 @@ void respond_message(char *s, int uid){
 	pthread_mutex_unlock(&clients_mutex);
 }
 
-//reseta a struct de um canal
+/*
+ * reset_channel
+ *
+ * Funcao que reseta os valores da struct de um canal
+ * 
+ * @index 	Índice do canal no vetor 'channels'            
+ */
 void reset_channel(int index){
 	strcpy(channels[index]->ch_name, "-1");
 	channels[index]->admin_id = -1;
@@ -256,6 +261,14 @@ void close_channel(int index){
 }
 */
 
+
+/*
+ * close_channel
+ *
+ * Funcao que fecha um canal aberto. Remove o admin e todos clientes e chama a função que reseta o canal.
+ * 
+ * @ch_index 	Índice do canal no vetor 'channels'              
+ */
 void close_channel(int ch_index){
 	char msg[BUFFER_SZ];
 	sprintf(msg, "\nCanal <%s> FECHADO pelo admin <%s>\n> Você foi desconectado do canal.\n", channels[ch_index]->ch_name, channels[ch_index]->admin_name);
@@ -285,7 +298,15 @@ void close_channel(int ch_index){
 	reset_channel(ch_index);
 }
 
-
+/*
+ * kick_user
+ *
+ * Funcao que desconecta um cliente de um canal
+ * 
+ * @cli_id		Uid do cliente que será desconectado
+ * @cli_name	Nome do cliente que será desconectado
+ * @ch_ind 		Índice do canal no vetor 'channels'             
+ */
 void kick_user(int cli_id, char* cli_name, int ch_ind){
 	char msg[BUFFER_SZ];
 	sprintf(msg, "### Você foi desconectado do canal <%s>\n", client_channel[cli_id]);
@@ -311,8 +332,22 @@ void kick_user(int cli_id, char* cli_name, int ch_ind){
 	}	
 }
 
+/*
+ * mute_user
+ *
+ * Funcao que muta um cliente de um canal para que este não possa enviar mensagens neste canal
+ * 
+ * @cli_id		Uid do cliente que será mutado
+ * @cli_name	Nome do cliente que será mutado
+ * @ch_ind 		Índice do canal no vetor 'channels'              
+ */
 void mute_user(int cli_id, char* cli_name, int ch_ind){
 	char msg[BUFFER_SZ];
+	if(muted_client[cli_id] == 1){ //se o cliente ja estiver mutado
+		sprintf(msg, "\nERRO: O cliente <%s> já está mutado.\n", client_channel[cli_id]);
+		respond_message(msg, cli_id);
+		return;		
+	}
 	sprintf(msg, "\n### Você foi mutado no canal <%s>\n", client_channel[cli_id]);
 	respond_message(msg, cli_id);
 	sprintf(msg, "\n### O cliente <%s> foi mutado no canal <%s>\n", cli_name, client_channel[cli_id]);
@@ -322,27 +357,36 @@ void mute_user(int cli_id, char* cli_name, int ch_ind){
 	muted_client[cli_id] = 1;
 }
 
-
+/*
+ * unmute_user
+ *
+ * Funcao que desmuta um cliente mutado em um canal para que este possa voltar a enviar mensagens neste canal
+ * 
+ * @cli_id		Uid do cliente que será mutado
+ * @cli_name	Nome do cliente que será mutado
+ * @ch_ind 		Índice do canal no vetor 'channels'              
+ */
 void unmute_user(int cli_id, char* cli_name, int ch_ind){
+	char msg[BUFFER_SZ];
+	if(muted_client[cli_id] == 0){ //se o cliente ja estiver desmutado
+		sprintf(msg, "\nERRO: O cliente <%s> já está desmutado.\n", client_channel[cli_id]);
+		respond_message(msg, cli_id);
+		return;		
+	}
+
 	muted_client[cli_id] = 0;
 
-	char msg[BUFFER_SZ];
 	sprintf(msg, "\n### Você foi desmutado no canal <%s>\n", client_channel[cli_id]);
 	respond_message(msg, cli_id);
 	sprintf(msg, "\n### O cliente <%s> foi desmutado no canal <%s>\n", cli_name, client_channel[cli_id]);
 	send_message(msg, cli_id);
 	printf("%s\n", msg);
-
 }
 
-
 /*
- * send_message
+ * handle_client
  *
- * Thread que cuida de cada cliente
- * 
- * @param 	arg
- *               
+ * Thread que cuida de cada cliente              
  */
 void *handle_client(void *arg){
 	char buffer[BUFFER_SZ];
@@ -390,10 +434,14 @@ void *handle_client(void *arg){
 					respond_message(buffer, cli->uid);
 				}
 				else if(startsWith("/nickname ", buffer)){
-					strncpy(cli->name, &buffer[10], NAME_LEN);
 					strncpy(name, &buffer[10], NAME_LEN);
-					sprintf(buffer, "--- Você trocou seu nickname para: %s\n", cli->name);
+					sprintf(buffer, "--- O cliente <%s> trocou o nickname para: <%s>\n", cli->name, name);
+					send_message(buffer, cli->uid);
+
+					strncpy(cli->name, name, NAME_LEN);
+					sprintf(buffer, "--- Você trocou seu nickname para: <%s>\n", cli->name);
 					respond_message(buffer, cli->uid);
+
 					if(strcmp(client_channel[cli->uid],"-1") != 0){ //se o cliente é admin de um canal, atualiza o nome do admin deste canal
 						for (int i = 0; i < MAX_CHANNELS; i++){
 							if(!(channels[i])){
@@ -463,7 +511,7 @@ void *handle_client(void *arg){
 							client_channel[cli->uid] = channel_name; //colocando o cliente no canal
 
 							sprintf(buffer, "### O cliente <%s> entrou no canal <%s>\n", cli->name, client_channel[cli->uid]);
-							printf("%s\n", buffer);
+							printf("%s", buffer);
 							send_message(buffer, cli->uid);
 							printf("----- Admin do Canal <%s>: %s, ID: %d ------\n", channels[ch_index]->ch_name, channels[ch_index]->admin_name, channels[ch_index]->admin_id);
 							sprintf(buffer, "\n=========================================\nVocê entrou no canal <%s>\n=========================================\n----- Admin do Canal <%s>: %s, ID: %d ------\n[ - Para sair do canal, digite: /leavechannel ]\n\n", channel_name, channel_name, channels[ch_index]->admin_name, channels[ch_index]->admin_id);
@@ -581,6 +629,7 @@ void *handle_client(void *arg){
 						strncpy(user_to_mute, &buffer[6], NAME_LEN);
 						if(strcmp(user_to_mute, cli->name) == 0){ //se o próprio adm tentar se mutar
 							sprintf(buffer, "\nERRO: Não é permitido mutar/desmutar o admin do canal.\n\n");
+							respond_message(buffer, cli->uid);
 						}
 						else{
 							
@@ -601,7 +650,7 @@ void *handle_client(void *arg){
 								sprintf(buffer, "ERRO: Você não tem permissão para este comando. Apenas admins possuem autorização para isto.\n");
 								respond_message(buffer, cli->uid);
 							}
-							else{ //o cliente é o admin
+							else{ //o cliente que mandou o comando é o admin
 								int user_found = 0;
 								for (int i = 0; i < MAX_CLIENTS; i++){ //procurando o cliente que será mutado
 									if(clients[i]){
@@ -634,6 +683,7 @@ void *handle_client(void *arg){
 						strncpy(user_to_unmute, &buffer[8], NAME_LEN);
 						if(strcmp(user_to_unmute, cli->name) == 0){ //se o próprio adm tentar se desmutar
 							sprintf(buffer, "\nERRO: Não é permitido mutar/desmutar o admin do canal.\n\n");
+							respond_message(buffer, cli->uid);
 						}
 						else{
 							char ch_unmute[CHANNEL_NAME_LEN+1]; //nome do canal 
@@ -794,6 +844,7 @@ void *handle_client(void *arg){
 	return NULL;
 }
 
+
 int main(int argc, char const *argv[])
 {
 	if(argc != 2){
@@ -806,8 +857,6 @@ int main(int argc, char const *argv[])
 		client_channel[i] = "-1";
 		muted_client[i] = 0;
 	}
-
-
 
 	// Comandos necessarios para bindar na porta recebira pelo argv[1] esperando uma conexao TCP
 	char *ip = "0.0.0.0"; //bindando em todas as interfaces de rede
@@ -872,8 +921,6 @@ int main(int argc, char const *argv[])
 		pthread_create(&tid, NULL, &handle_client, (void*)cli);
 
 	}
-
-
 
 	return 0;
 }
